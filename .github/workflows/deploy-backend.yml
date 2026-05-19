@@ -31,21 +31,34 @@ jobs:
           cd publish-backend
           zip -r ../deploy.zip .
 
-      - name: Deploy to Azure Functions via Zip Deploy
+      - name: Parse publish profile
         env:
           SCM_CREDS: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        id: parse
         run: |
-          # Parse publish profile XML properly using xmllint
-          USERNAME=$(echo "$SCM_CREDS" | xmllint --xpath 'string(//publishProfile[@publishMethod="MSDeploy"]/@userName)' -)
-          PASSWORD=$(echo "$SCM_CREDS" | xmllint --xpath 'string(//publishProfile[@publishMethod="MSDeploy"]/@userPWD)' -)
-          PUBLISH_URL=$(echo "$SCM_CREDS" | xmllint --xpath 'string(//publishProfile[@publishMethod="MSDeploy"]/@publishUrl)' -)
-          # Remove port suffix if present (443 is default for HTTPS)
-          PUBLISH_URL="${PUBLISH_URL%:443}"
-          echo "Deploying to: $PUBLISH_URL"
-          echo "Username: $USERNAME"
+          echo "$SCM_CREDS" > /tmp/profile.xml
+          python3 << 'PYEOF'
+          import xml.etree.ElementTree as ET, os
+          tree = ET.parse("/tmp/profile.xml")
+          for p in tree.findall(".//publishProfile"):
+              if p.get("publishMethod") == "MSDeploy":
+                  url = p.get("publishUrl", "")
+                  if url.endswith(":443"): url = url[:-4]
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                      f.write(f"username={p.get('userName', '')}\n")
+                      f.write(f"password={p.get('userPWD', '')}\n")
+                      f.write(f"publish_url={url}\n")
+                  break
+          PYEOF
+          rm -f /tmp/profile.xml
+
+      - name: Deploy to Azure Functions via Zip Deploy
+        run: |
+          echo "Deploying to: ${{ steps.parse.outputs.publish_url }}"
+          echo "Username: ${{ steps.parse.outputs.username }}"
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://${PUBLISH_URL}/api/zipdeploy" \
-            --user "$USERNAME:$PASSWORD" \
+            "https://${{ steps.parse.outputs.publish_url }}/api/zipdeploy" \
+            --user "${{ steps.parse.outputs.username }}:${{ steps.parse.outputs.password }}" \
             --data-binary @deploy.zip \
             -H "Content-Type: application/zip")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
