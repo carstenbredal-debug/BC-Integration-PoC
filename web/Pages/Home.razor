@@ -1,0 +1,107 @@
+@page "/"
+@using web.Models
+@using web.Services
+@inject BcApiService Api
+
+<PageTitle>Create Customer</PageTitle>
+
+<h1>Create Customer in Business Central</h1>
+
+<div class="card">
+    <div class="card-body">
+        <EditForm Model="@_model" OnValidSubmit="HandleSubmit" FormName="CreateCustomer">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label" for="displayName">Display Name *</label>
+                <InputText id="displayName" class="form-control" @bind-Value="_model.DisplayName" />
+                <ValidationMessage For="@(() => _model.DisplayName)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="_model.Email" />
+                <ValidationMessage For="@(() => _model.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="phone">Phone Number</label>
+                <InputText id="phone" class="form-control" @bind-Value="_model.PhoneNumber" />
+                <ValidationMessage For="@(() => _model.PhoneNumber)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" disabled="@_submitting">
+                @if (_submitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <text>Creating...</text>
+                }
+                else
+                {
+                    <text>Create Customer</text>
+                }
+            </button>
+        </EditForm>
+
+        @if (_result is not null)
+        {
+            <div class="alert @(_result.Failed > 0 ? "alert-danger" : "alert-success") mt-3" role="alert">
+                @if (_result.Failed > 0)
+                {
+                    <strong>Failed.</strong>
+                    @foreach (var error in _result.Errors)
+                    {
+                        <p class="mb-0">@error</p>
+                    }
+                }
+                else if (_result.Created > 0)
+                {
+                    <strong>Customer created successfully in Business Central.</strong>
+                }
+                else if (_result.Updated > 0)
+                {
+                    <strong>Customer already existed and was updated in Business Central.</strong>
+                }
+            </div>
+        }
+
+        @if (_errorMessage is not null)
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                <strong>Error:</strong> @_errorMessage
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateCustomerRequest _model = new();
+    private SyncResult? _result;
+    private string? _errorMessage;
+    private bool _submitting;
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _result = null;
+        _errorMessage = null;
+
+        try
+        {
+            _result = await Api.CreateCustomerAsync(_model);
+
+            if (_result.Failed == 0)
+            {
+                _model = new CreateCustomerRequest();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}

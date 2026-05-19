@@ -8,5 +8,9 @@
     "BC_CLIENT_SECRET": "<your-client-secret>",
     "BC_ENVIRONMENT": "production",
     "BC_COMPANY_ID": ""
+  },
+  "Host": {
+    "CORS": "*",
+    "CORSCredentials": false
   }
 }
