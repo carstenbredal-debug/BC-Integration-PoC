@@ -13,9 +13,16 @@ var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
 var functionKey = builder.Configuration["FunctionKey"] ?? "";
 
 builder.Services.AddScoped<BcApiService>();
-builder.Services.AddScoped(sp => new HttpClient(new FunctionKeyHandler(functionKey))
+if (string.IsNullOrEmpty(functionKey))
 {
-    BaseAddress = new Uri(apiBaseUrl)
-});
+    builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+}
+else
+{
+    builder.Services.AddScoped(sp => new HttpClient(new FunctionKeyHandler(functionKey))
+    {
+        BaseAddress = new Uri(apiBaseUrl)
+    });
+}
 
 await builder.Build().RunAsync();

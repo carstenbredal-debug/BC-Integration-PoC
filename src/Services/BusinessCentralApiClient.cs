@@ -19,7 +19,7 @@ public class BusinessCentralApiClient
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
     public BusinessCentralApiClient(

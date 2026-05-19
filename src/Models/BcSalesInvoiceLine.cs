@@ -17,13 +17,13 @@ public class BcSalesInvoiceLine
     public Guid ItemId { get; set; }
 
     [JsonPropertyName("lineType")]
-    public string LineType { get; set; } = "Item";
+    public string LineType { get; set; } = "Item"; // Keep default since we always want to send this
 
     [JsonPropertyName("lineObjectNumber")]
-    public string LineObjectNumber { get; set; } = string.Empty;
+    public string? LineObjectNumber { get; set; }
 
     [JsonPropertyName("description")]
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     [JsonPropertyName("quantity")]
     public decimal Quantity { get; set; }
