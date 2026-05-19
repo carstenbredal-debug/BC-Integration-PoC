@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="src/BC-Integration-PoC.csproj" />
+  <Project Path="web/web.csproj" />
 </Solution>

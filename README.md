@@ -2,7 +2,7 @@
 
 Proof of concept for bidirectional integration with **Microsoft Dynamics 365 Business Central** via the standard [BC REST API v2.0](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/api-reference/v2.0/).
 
-Built as an **Azure Functions** project (C# / .NET 8, isolated worker model).
+Built as an **Azure Functions** backend (C# / .NET 8, isolated worker model) with a **Blazor WebAssembly** frontend for creating customers.
 
 ## Features
 
@@ -10,30 +10,34 @@ Built as an **Azure Functions** project (C# / .NET 8, isolated worker model).
 - **Pull from BC** — Read companies, customers, and items
 - **Push to BC** — Create or update customers and items (matched by entity number)
 - **Bidirectional sync** — Orchestrated pull + push in a single call
+- **Blazor frontend** — Web UI for creating customers directly in BC
 
 ## Project Structure
 
 ```
-src/
+src/                                       # Azure Functions backend
 ├── Configuration/
-│   └── BusinessCentralOptions.cs       # Typed settings
+│   └── BusinessCentralOptions.cs
 ├── Models/
-│   ├── BcCompany.cs                    # Company entity
-│   ├── BcCustomer.cs                   # Customer entity
-│   ├── BcItem.cs                       # Item entity
-│   ├── ODataResponse.cs               # OData collection wrapper
-│   └── SyncResult.cs                  # Sync operation result
 ├── Services/
-│   ├── BusinessCentralAuthService.cs   # OAuth2 token acquisition
-│   ├── BusinessCentralApiClient.cs     # Typed HTTP client for BC API v2.0
-│   └── SyncService.cs                 # Sync orchestration
 ├── Functions/
-│   ├── PullFromBcFunction.cs           # GET endpoints (companies, customers, items)
-│   ├── PushToBcFunction.cs             # POST endpoints (push customers, items)
-│   └── SyncFunction.cs                # Sync endpoints (pull, push, full sync)
-├── Program.cs                          # Host + DI setup
+├── Program.cs
 ├── host.json
 └── BC-Integration-PoC.csproj
+
+web/                                       # Blazor WebAssembly frontend
+├── Models/
+│   ├── CreateCustomerRequest.cs           # Form model with validation
+│   └── CustomerResult.cs                 # API response DTOs
+├── Services/
+│   ├── BcApiService.cs                    # API client for Azure Functions backend
+│   └── FunctionKeyHandler.cs              # Auth handler for function keys
+├── Pages/
+│   └── Home.razor                         # Customer creation form
+├── Layout/
+├── Program.cs
+├── wwwroot/appsettings.json               # API URL + function key config
+└── web.csproj
 ```
 
 ## Prerequisites
@@ -87,11 +91,36 @@ Set the following environment variables (or add them to `local.settings.json`):
 # Terminal 1: Start Azurite
 azurite --silent --location .azurite
 
-# Terminal 2: Run the Functions
+# Terminal 2: Run the Functions backend
 cd src
 dotnet build
 func start
+
+# Terminal 3: Run the Blazor frontend
+cd web
+dotnet run
 ```
+
+The frontend will be available at `http://localhost:5000` (or the port shown in the terminal).
+
+### Frontend Configuration
+
+Edit `web/wwwroot/appsettings.json` to set the API URL and function key:
+
+```json
+{
+  "ApiBaseUrl": "https://<your-function-app>.azurewebsites.net/api/",
+  "FunctionKey": "<your-function-key>"
+}
+```
+
+For local development, point `ApiBaseUrl` to `http://localhost:7071/api/` (no function key needed locally).
+
+### CORS
+
+For Azure deployment, add the frontend URL to your Function App's CORS settings:
+1. Azure Portal → Function App → **API → CORS**
+2. Add the frontend URL (e.g. `https://your-site.azurestaticapps.net`)
 
 ## API Endpoints
 
