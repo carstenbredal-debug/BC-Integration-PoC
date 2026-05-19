@@ -33,4 +33,16 @@ public class BcCustomerDto
 
     [JsonPropertyName("phoneNumber")]
     public string PhoneNumber { get; set; } = string.Empty;
+
+    [JsonPropertyName("addressLine1")]
+    public string AddressLine1 { get; set; } = string.Empty;
+
+    [JsonPropertyName("city")]
+    public string City { get; set; } = string.Empty;
+
+    [JsonPropertyName("postalCode")]
+    public string PostalCode { get; set; } = string.Empty;
+
+    [JsonPropertyName("country")]
+    public string Country { get; set; } = string.Empty;
 }

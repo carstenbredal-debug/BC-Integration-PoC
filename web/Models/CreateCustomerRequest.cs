@@ -13,4 +13,21 @@ public class CreateCustomerRequest
 
     [Phone(ErrorMessage = "Invalid phone number.")]
     public string PhoneNumber { get; set; } = string.Empty;
+
+    [StringLength(100)]
+    public string AddressLine1 { get; set; } = string.Empty;
+
+    [StringLength(30)]
+    public string City { get; set; } = string.Empty;
+
+    [StringLength(20)]
+    public string PostalCode { get; set; } = string.Empty;
+
+    public string Country { get; set; } = string.Empty;
+}
+
+public class CountryRegion
+{
+    public string Code { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
 }
