@@ -1,0 +1,28 @@
+## .NET / Azure Functions
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+
+# Azure Functions local settings (contains secrets)
+local.settings.json
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# macOS
+.DS_Store
+
+# Visual Studio Code
+.vscode/
