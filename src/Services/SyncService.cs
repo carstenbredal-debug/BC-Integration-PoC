@@ -95,8 +95,10 @@ public class SyncService
             {
                 var genBusPostingGroup = customer.GenBusPostingGroup;
                 var vatBusPostingGroup = customer.VatBusPostingGroup;
+                var customerPostingGroup = customer.CustomerPostingGroup;
                 customer.GenBusPostingGroup = null;
                 customer.VatBusPostingGroup = null;
+                customer.CustomerPostingGroup = null;
 
                 var existing = await _bcClient.GetCustomerByNumberAsync(companyId, customer.Number);
                 Guid createdId;
@@ -118,13 +120,13 @@ public class SyncService
                     _logger.LogInformation("Updated customer {Number}", customer.Number);
                 }
 
-                if (!string.IsNullOrWhiteSpace(genBusPostingGroup) || !string.IsNullOrWhiteSpace(vatBusPostingGroup))
+                if (!string.IsNullOrWhiteSpace(genBusPostingGroup) || !string.IsNullOrWhiteSpace(vatBusPostingGroup) || !string.IsNullOrWhiteSpace(customerPostingGroup))
                 {
                     try
                     {
                         var companyName = await _bcClient.ResolveCompanyNameAsync();
                         await _bcClient.PatchCustomerPostingGroupsAsync(
-                            companyName, createdId, genBusPostingGroup, vatBusPostingGroup);
+                            companyName, createdId, genBusPostingGroup, vatBusPostingGroup, customerPostingGroup);
                         _logger.LogInformation("Set posting groups for customer {Id}", createdId);
                     }
                     catch (Exception pgEx)

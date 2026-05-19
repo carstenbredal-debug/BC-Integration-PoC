@@ -65,4 +65,7 @@ public class BcCustomer
 
     [JsonPropertyName("vatBusPostingGroup")]
     public string? VatBusPostingGroup { get; set; }
+
+    [JsonPropertyName("customerPostingGroup")]
+    public string? CustomerPostingGroup { get; set; }
 }
