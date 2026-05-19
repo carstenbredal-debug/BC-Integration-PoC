@@ -1,0 +1,249 @@
+@page "/invoice"
+@using web.Models
+@using web.Services
+@inject BcApiService Api
+
+<PageTitle>Create Sales Invoice</PageTitle>
+
+<h1>Create Sales Invoice in Business Central</h1>
+
+<div class="card">
+    <div class="card-body">
+        <EditForm Model="@_model" OnValidSubmit="HandleSubmit" FormName="CreateInvoice">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label" for="customer">Customer *</label>
+                @if (_loadingDropdowns)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Loading customers...</span>
+                    </div>
+                }
+                else
+                {
+                    <InputSelect id="customer" class="form-select" @bind-Value="_model.CustomerId">
+                        <option value="">-- Select customer --</option>
+                        @foreach (var c in _customers)
+                        {
+                            <option value="@c.Id">@c.DisplayName (@c.Number)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => _model.CustomerId)" />
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="extDocNo">External Document Number</label>
+                <InputText id="extDocNo" class="form-control" @bind-Value="_model.ExternalDocumentNumber" />
+            </div>
+
+            <hr />
+            <h5>Invoice Lines</h5>
+
+            @for (var i = 0; i < _model.Lines.Count; i++)
+            {
+                var index = i;
+                <div class="card mb-2">
+                    <div class="card-body py-2">
+                        <div class="row align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label">Item</label>
+                                @if (_loadingDropdowns)
+                                {
+                                    <div class="d-flex align-items-center">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                        <span>Loading...</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <select class="form-select" value="@_model.Lines[index].ItemId"
+                                            @onchange="@(e => OnItemSelected(index, e))">
+                                        <option value="">-- Select item --</option>
+                                        @foreach (var item in _items)
+                                        {
+                                            <option value="@item.Id">@item.DisplayName (@item.Number)</option>
+                                        }
+                                    </select>
+                                }
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Quantity</label>
+                                <InputNumber class="form-control" @bind-Value="_model.Lines[index].Quantity" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Unit Price</label>
+                                <InputNumber class="form-control" @bind-Value="_model.Lines[index].UnitPrice" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Line Total</label>
+                                <input type="text" class="form-control-plaintext" readonly
+                                       value="@((_model.Lines[index].Quantity * _model.Lines[index].UnitPrice).ToString("N2"))" />
+                            </div>
+                            <div class="col-md-2">
+                                @if (_model.Lines.Count > 1)
+                                {
+                                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveLine(index)">
+                                        Remove
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" @onclick="AddLine">
+                + Add Line
+            </button>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <strong>Total: @_model.Lines.Sum(l => l.Quantity * l.UnitPrice).ToString("N2")</strong>
+            </div>
+
+            <button type="submit" class="btn btn-primary" disabled="@_submitting">
+                @if (_submitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <text>Creating...</text>
+                }
+                else
+                {
+                    <text>Create Invoice</text>
+                }
+            </button>
+        </EditForm>
+
+        @if (_result is not null)
+        {
+            <div class="alert @(_result.LinesFailed > 0 ? "alert-warning" : "alert-success") mt-3" role="alert">
+                <strong>Invoice @_result.InvoiceNumber created</strong> for @_result.CustomerName
+                <br />
+                Status: @_result.Status |
+                Lines: @_result.LinesCreated created |
+                Total excl. tax: @_result.TotalAmountExcludingTax.ToString("N2") |
+                Total incl. tax: @_result.TotalAmountIncludingTax.ToString("N2")
+                @if (_result.Errors.Count > 0)
+                {
+                    <hr />
+                    <strong>Errors:</strong>
+                    @foreach (var error in _result.Errors)
+                    {
+                        <p class="mb-0">@error</p>
+                    }
+                }
+            </div>
+        }
+
+        @if (_errorMessage is not null)
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                <strong>Error:</strong> @_errorMessage
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateInvoiceFormModel _model = new();
+    private InvoiceResult? _result;
+    private string? _errorMessage;
+    private bool _submitting;
+    private bool _loadingDropdowns = true;
+    private List<CustomerListItem> _customers = new();
+    private List<ItemListItem> _items = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tasks = new[]
+            {
+                LoadAsync(async () => _customers = await Api.GetCustomersAsync()),
+                LoadAsync(async () => _items = await Api.GetItemsAsync())
+            };
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load dropdown data: {ex.Message}";
+        }
+        finally
+        {
+            _loadingDropdowns = false;
+        }
+    }
+
+    private static async Task LoadAsync(Func<Task> action)
+    {
+        await action();
+    }
+
+    private void OnItemSelected(int index, ChangeEventArgs e)
+    {
+        var itemId = e.Value?.ToString() ?? "";
+        _model.Lines[index].ItemId = itemId;
+
+        var item = _items.FirstOrDefault(i => i.Id == itemId);
+        if (item is not null)
+        {
+            _model.Lines[index].Description = item.DisplayName;
+            _model.Lines[index].ItemNumber = item.Number;
+            _model.Lines[index].UnitPrice = item.UnitPrice;
+        }
+    }
+
+    private void AddLine()
+    {
+        _model.Lines.Add(new InvoiceLineFormModel());
+    }
+
+    private void RemoveLine(int index)
+    {
+        if (_model.Lines.Count > 1)
+            _model.Lines.RemoveAt(index);
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitting = true;
+        _result = null;
+        _errorMessage = null;
+
+        try
+        {
+            var dto = new CreateInvoiceDto
+            {
+                CustomerId = _model.CustomerId,
+                ExternalDocumentNumber = _model.ExternalDocumentNumber,
+                Lines = _model.Lines
+                    .Where(l => !string.IsNullOrWhiteSpace(l.ItemId))
+                    .Select(l => new InvoiceLineDto
+                    {
+                        ItemId = l.ItemId,
+                        Description = l.Description,
+                        Quantity = l.Quantity,
+                        UnitPrice = l.UnitPrice
+                    })
+                    .ToList()
+            };
+
+            _result = await Api.CreateSalesInvoiceAsync(dto);
+
+            if (_result.LinesFailed == 0)
+            {
+                _model = new CreateInvoiceFormModel();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}
