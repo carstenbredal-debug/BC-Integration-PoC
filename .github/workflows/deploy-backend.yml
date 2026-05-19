@@ -31,42 +31,54 @@ jobs:
           cd publish-backend
           zip -r ../deploy.zip .
 
-      - name: Parse publish profile
+      - name: Deploy to Azure Functions via Zip Deploy
         env:
           SCM_CREDS: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-        id: parse
         run: |
+          # Write profile to file and use Python to deploy (avoids credential serialization issues)
           echo "$SCM_CREDS" > /tmp/profile.xml
           python3 << 'PYEOF'
-          import xml.etree.ElementTree as ET, os
+          import xml.etree.ElementTree as ET
+          import subprocess, sys
+
           tree = ET.parse("/tmp/profile.xml")
+          creds = None
           for p in tree.findall(".//publishProfile"):
               if p.get("publishMethod") == "MSDeploy":
                   url = p.get("publishUrl", "")
                   if url.endswith(":443"): url = url[:-4]
-                  with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                      f.write(f"username={p.get('userName', '')}\n")
-                      f.write(f"password={p.get('userPWD', '')}\n")
-                      f.write(f"publish_url={url}\n")
+                  creds = {
+                      "username": p.get("userName", ""),
+                      "password": p.get("userPWD", ""),
+                      "url": url,
+                  }
                   break
+
+          if not creds:
+              print("ERROR: No MSDeploy profile found in publish profile XML")
+              sys.exit(1)
+
+          print(f"Deploying to: {creds['url']}")
+          print(f"Username: {creds['username']}")
+
+          result = subprocess.run([
+              "curl", "-s", "-w", "\n%{http_code}", "-X", "POST",
+              f"https://{creds['url']}/api/zipdeploy",
+              "--user", f"{creds['username']}:{creds['password']}",
+              "--data-binary", "@deploy.zip",
+              "-H", "Content-Type: application/zip"
+          ], capture_output=True, text=True)
+
+          output = result.stdout.strip()
+          lines = output.split("\n")
+          http_code = lines[-1] if lines else "0"
+          body = "\n".join(lines[:-1])
+
+          print(f"Deploy response code: {http_code}")
+          if int(http_code) >= 400:
+              print(f"Response body: {body}")
+              print(f"Deployment failed with HTTP {http_code}")
+              sys.exit(1)
+          print("Deployment succeeded!")
           PYEOF
           rm -f /tmp/profile.xml
-
-      - name: Deploy to Azure Functions via Zip Deploy
-        run: |
-          echo "Deploying to: ${{ steps.parse.outputs.publish_url }}"
-          echo "Username: ${{ steps.parse.outputs.username }}"
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://${{ steps.parse.outputs.publish_url }}/api/zipdeploy" \
-            --user "${{ steps.parse.outputs.username }}:${{ steps.parse.outputs.password }}" \
-            --data-binary @deploy.zip \
-            -H "Content-Type: application/zip")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          echo "Deploy response code: $HTTP_CODE"
-          if [ "$HTTP_CODE" -ge 400 ]; then
-            echo "Response body:"
-            echo "$RESPONSE" | head -n -1
-            echo "Deployment failed with HTTP $HTTP_CODE"
-            exit 1
-          fi
-          echo "Deployment succeeded!"
