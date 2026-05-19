@@ -49,6 +49,51 @@ public class PullFromBcFunction
         return response;
     }
 
+    [Function("GetPaymentTerms")]
+    public async Task<HttpResponseData> GetPaymentTerms(
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+    {
+        _logger.LogInformation("Fetching payment terms from Business Central");
+
+        var companyId = await _bcClient.ResolveCompanyIdAsync();
+        var paymentTerms = await _bcClient.GetPaymentTermsAsync(companyId);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "application/json");
+        await response.WriteStringAsync(JsonSerializer.Serialize(paymentTerms));
+        return response;
+    }
+
+    [Function("GetGenBusPostingGroups")]
+    public async Task<HttpResponseData> GetGenBusPostingGroups(
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+    {
+        _logger.LogInformation("Fetching Gen. Business Posting Groups from Business Central");
+
+        var companyName = await _bcClient.ResolveCompanyNameAsync();
+        var groups = await _bcClient.GetGenBusPostingGroupsAsync(companyName);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "application/json");
+        await response.WriteStringAsync(JsonSerializer.Serialize(groups));
+        return response;
+    }
+
+    [Function("GetVatBusPostingGroups")]
+    public async Task<HttpResponseData> GetVatBusPostingGroups(
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+    {
+        _logger.LogInformation("Fetching VAT Business Posting Groups from Business Central");
+
+        var companyName = await _bcClient.ResolveCompanyNameAsync();
+        var groups = await _bcClient.GetVatBusPostingGroupsAsync(companyName);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "application/json");
+        await response.WriteStringAsync(JsonSerializer.Serialize(groups));
+        return response;
+    }
+
     [Function("GetCustomers")]
     public async Task<HttpResponseData> GetCustomers(
         [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)

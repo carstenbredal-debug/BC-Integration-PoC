@@ -93,11 +93,18 @@ public class SyncService
         {
             try
             {
+                var genBusPostingGroup = customer.GenBusPostingGroup;
+                var vatBusPostingGroup = customer.VatBusPostingGroup;
+                customer.GenBusPostingGroup = null;
+                customer.VatBusPostingGroup = null;
+
                 var existing = await _bcClient.GetCustomerByNumberAsync(companyId, customer.Number);
+                Guid createdId;
 
                 if (existing is null)
                 {
-                    await _bcClient.CreateCustomerAsync(companyId, customer);
+                    var created = await _bcClient.CreateCustomerAsync(companyId, customer);
+                    createdId = created.Id;
                     result.Created++;
                     _logger.LogInformation("Created customer {Number}", customer.Number);
                 }
@@ -106,8 +113,25 @@ public class SyncService
                     customer.Id = existing.Id;
                     customer.ETag = existing.ETag;
                     await _bcClient.UpdateCustomerAsync(companyId, customer);
+                    createdId = existing.Id;
                     result.Updated++;
                     _logger.LogInformation("Updated customer {Number}", customer.Number);
+                }
+
+                if (!string.IsNullOrWhiteSpace(genBusPostingGroup) || !string.IsNullOrWhiteSpace(vatBusPostingGroup))
+                {
+                    try
+                    {
+                        var companyName = await _bcClient.ResolveCompanyNameAsync();
+                        await _bcClient.PatchCustomerPostingGroupsAsync(
+                            companyName, createdId, genBusPostingGroup, vatBusPostingGroup);
+                        _logger.LogInformation("Set posting groups for customer {Id}", createdId);
+                    }
+                    catch (Exception pgEx)
+                    {
+                        _logger.LogWarning(pgEx, "Failed to set posting groups for customer {Id}", createdId);
+                        result.Errors.Add($"Customer created but posting groups could not be set: {pgEx.Message}");
+                    }
                 }
             }
             catch (Exception ex)

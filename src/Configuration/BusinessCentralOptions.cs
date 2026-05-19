@@ -21,4 +21,7 @@ public class BusinessCentralOptions
 
     public string BaseUrl =>
         $"https://api.businesscentral.dynamics.com/v2.0/{TenantId}/{Environment}/api/v2.0";
+
+    public string ODataV4Url =>
+        $"https://api.businesscentral.dynamics.com/v2.0/{TenantId}/{Environment}/ODataV4";
 }

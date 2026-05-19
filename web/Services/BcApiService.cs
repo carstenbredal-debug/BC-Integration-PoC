@@ -18,21 +18,43 @@ public class BcApiService
         return result ?? new List<CountryRegion>();
     }
 
+    public async Task<List<PaymentTerm>> GetPaymentTermsAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<PaymentTerm>>("GetPaymentTerms");
+        return result ?? new List<PaymentTerm>();
+    }
+
+    public async Task<List<PostingGroup>> GetGenBusPostingGroupsAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<PostingGroup>>("GetGenBusPostingGroups");
+        return result ?? new List<PostingGroup>();
+    }
+
+    public async Task<List<PostingGroup>> GetVatBusPostingGroupsAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<PostingGroup>>("GetVatBusPostingGroups");
+        return result ?? new List<PostingGroup>();
+    }
+
     public async Task<SyncResult> CreateCustomerAsync(CreateCustomerRequest request)
     {
-        var payload = new List<BcCustomerDto>
+        var dto = new BcCustomerDto
         {
-            new()
-            {
-                DisplayName = request.DisplayName,
-                Email = request.Email,
-                PhoneNumber = request.PhoneNumber,
-                AddressLine1 = request.AddressLine1,
-                City = request.City,
-                PostalCode = request.PostalCode,
-                Country = request.Country
-            }
+            DisplayName = request.DisplayName,
+            Email = request.Email,
+            PhoneNumber = request.PhoneNumber,
+            AddressLine1 = request.AddressLine1,
+            City = request.City,
+            PostalCode = request.PostalCode,
+            Country = request.Country,
+            GenBusPostingGroup = request.GenBusPostingGroup,
+            VatBusPostingGroup = request.VatBusPostingGroup
         };
+
+        if (Guid.TryParse(request.PaymentTermsId, out _))
+            dto.PaymentTermsId = request.PaymentTermsId;
+
+        var payload = new List<BcCustomerDto> { dto };
 
         var response = await _httpClient.PostAsJsonAsync("PushCustomers", payload);
         response.EnsureSuccessStatusCode();

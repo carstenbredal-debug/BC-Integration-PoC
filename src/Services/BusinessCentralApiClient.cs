@@ -56,12 +56,83 @@ public class BusinessCentralApiClient
         return company.Id;
     }
 
+    public async Task<string> ResolveCompanyNameAsync()
+    {
+        var companyId = await ResolveCompanyIdAsync();
+        var companies = await GetCompaniesAsync();
+        var company = companies.FirstOrDefault(c => c.Id == companyId)
+            ?? throw new InvalidOperationException($"Company {companyId} not found.");
+        return company.Name;
+    }
+
     // ── Countries/Regions ───────────────────────────────────────
 
     public async Task<List<BcCountryRegion>> GetCountriesRegionsAsync(Guid companyId)
     {
         var url = $"{_options.BaseUrl}/companies({companyId})/countriesRegions?$top=250&$orderby=displayName";
         return await GetListAsync<BcCountryRegion>(url);
+    }
+
+    // ── Payment Terms ────────────────────────────────────────────
+
+    public async Task<List<BcPaymentTerm>> GetPaymentTermsAsync(Guid companyId)
+    {
+        var url = $"{_options.BaseUrl}/companies({companyId})/paymentTerms?$top=250&$orderby=displayName";
+        return await GetListAsync<BcPaymentTerm>(url);
+    }
+
+    // ── Posting Groups (via OData v4 workflowCustomers) ─────────
+
+    public async Task<List<BcPostingGroup>> GetGenBusPostingGroupsAsync(string companyName)
+    {
+        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$select=genBusPostingGroup&$top=500";
+        var customers = await GetListAsync<BcWorkflowCustomer>(url);
+        return customers
+            .Select(c => c.GenBusPostingGroup)
+            .Where(g => !string.IsNullOrWhiteSpace(g))
+            .Distinct()
+            .OrderBy(g => g)
+            .Select(g => new BcPostingGroup { Code = g })
+            .ToList();
+    }
+
+    public async Task<List<BcPostingGroup>> GetVatBusPostingGroupsAsync(string companyName)
+    {
+        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$select=vatBusPostingGroup&$top=500";
+        var customers = await GetListAsync<BcWorkflowCustomer>(url);
+        return customers
+            .Select(c => c.VatBusPostingGroup)
+            .Where(g => !string.IsNullOrWhiteSpace(g))
+            .Distinct()
+            .OrderBy(g => g)
+            .Select(g => new BcPostingGroup { Code = g })
+            .ToList();
+    }
+
+    public async Task PatchCustomerPostingGroupsAsync(
+        string companyName, Guid customerId, string? genBusPostingGroup, string? vatBusPostingGroup)
+    {
+        if (string.IsNullOrWhiteSpace(genBusPostingGroup) && string.IsNullOrWhiteSpace(vatBusPostingGroup))
+            return;
+
+        var filterUrl = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$filter=id eq {customerId}&$select=id";
+        var matches = await GetListAsync<BcWorkflowCustomer>(filterUrl);
+        if (matches.Count == 0)
+        {
+            _logger.LogWarning("Customer {Id} not found in workflowCustomers for posting group update", customerId);
+            return;
+        }
+
+        var wfCustomer = matches[0];
+        var patchUrl = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers({customerId})";
+
+        var patchBody = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(genBusPostingGroup))
+            patchBody["genBusPostingGroup"] = genBusPostingGroup;
+        if (!string.IsNullOrWhiteSpace(vatBusPostingGroup))
+            patchBody["vatBusPostingGroup"] = vatBusPostingGroup;
+
+        await PatchRawAsync(patchUrl, patchBody, wfCustomer.ETag);
     }
 
     // ── Customers ──────────────────────────────────────────────
@@ -173,6 +244,23 @@ public class BusinessCentralApiClient
         await EnsureSuccessAsync(response);
 
         return (await response.Content.ReadFromJsonAsync<T>(JsonOptions))!;
+    }
+
+    private async Task PatchRawAsync(string url, object payload, string? etag)
+    {
+        await SetAuthHeaderAsync();
+        _logger.LogInformation("PATCH {Url}", url);
+
+        var request = new HttpRequestMessage(HttpMethod.Patch, url)
+        {
+            Content = JsonContent.Create(payload, options: JsonOptions)
+        };
+
+        if (!string.IsNullOrEmpty(etag))
+            request.Headers.Add("If-Match", etag);
+
+        var response = await _httpClient.SendAsync(request);
+        await EnsureSuccessAsync(response);
     }
 
     private async Task<T> PatchAsync<T>(string url, T payload, string? etag)
