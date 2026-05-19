@@ -23,9 +23,11 @@ jobs:
         run: dotnet publish web/web.csproj -c Release -o publish-web
 
       - name: Inject Function Key
-        if: ${{ secrets.BC_FUNCTION_KEY != '' }}
+        env:
+          FUNCTION_KEY: ${{ secrets.BC_FUNCTION_KEY }}
+        if: env.FUNCTION_KEY != ''
         run: |
-          sed -i 's/"FunctionKey": ""/"FunctionKey": "${{ secrets.BC_FUNCTION_KEY }}"/' publish-web/wwwroot/appsettings.json
+          sed -i "s/\"FunctionKey\": \"\"/\"FunctionKey\": \"${FUNCTION_KEY}\"/" publish-web/wwwroot/appsettings.json
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
