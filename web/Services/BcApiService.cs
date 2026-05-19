@@ -36,6 +36,12 @@ public class BcApiService
         return result ?? new List<PostingGroup>();
     }
 
+    public async Task<List<PostingGroup>> GetCustomerPostingGroupsAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<PostingGroup>>("GetCustomerPostingGroups");
+        return result ?? new List<PostingGroup>();
+    }
+
     public async Task<SyncResult> CreateCustomerAsync(CreateCustomerRequest request)
     {
         var dto = new BcCustomerDto
@@ -48,7 +54,8 @@ public class BcApiService
             PostalCode = request.PostalCode,
             Country = request.Country,
             GenBusPostingGroup = request.GenBusPostingGroup,
-            VatBusPostingGroup = request.VatBusPostingGroup
+            VatBusPostingGroup = request.VatBusPostingGroup,
+            CustomerPostingGroup = request.CustomerPostingGroup
         };
 
         if (Guid.TryParse(request.PaymentTermsId, out _))

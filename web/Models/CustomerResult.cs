@@ -54,4 +54,7 @@ public class BcCustomerDto
 
     [JsonPropertyName("vatBusPostingGroup")]
     public string VatBusPostingGroup { get; set; } = string.Empty;
+
+    [JsonPropertyName("customerPostingGroup")]
+    public string CustomerPostingGroup { get; set; } = string.Empty;
 }

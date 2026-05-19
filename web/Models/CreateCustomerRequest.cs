@@ -30,6 +30,8 @@ public class CreateCustomerRequest
     public string GenBusPostingGroup { get; set; } = string.Empty;
 
     public string VatBusPostingGroup { get; set; } = string.Empty;
+
+    public string CustomerPostingGroup { get; set; } = string.Empty;
 }
 
 public class CountryRegion

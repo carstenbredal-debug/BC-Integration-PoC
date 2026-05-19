@@ -94,6 +94,27 @@
                 }
             </div>
 
+            <div class="mb-3">
+                <label class="form-label" for="customerPostingGroup">Customer Posting Group</label>
+                @if (_loadingDropdowns)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Loading...</span>
+                    </div>
+                }
+                else
+                {
+                    <InputSelect id="customerPostingGroup" class="form-select" @bind-Value="_model.CustomerPostingGroup">
+                        <option value="">-- Select --</option>
+                        @foreach (var g in _customerPostingGroups)
+                        {
+                            <option value="@g.Code">@g.Code</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label" for="genBusPostingGroup">Gen. Bus. Posting Group</label>
@@ -191,6 +212,7 @@
     private List<PaymentTerm> _paymentTerms = new();
     private List<PostingGroup> _genBusPostingGroups = new();
     private List<PostingGroup> _vatBusPostingGroups = new();
+    private List<PostingGroup> _customerPostingGroups = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -201,7 +223,8 @@
                 LoadAsync(async () => _countries = await Api.GetCountriesRegionsAsync()),
                 LoadAsync(async () => _paymentTerms = await Api.GetPaymentTermsAsync()),
                 LoadAsync(async () => _genBusPostingGroups = await Api.GetGenBusPostingGroupsAsync()),
-                LoadAsync(async () => _vatBusPostingGroups = await Api.GetVatBusPostingGroupsAsync())
+                LoadAsync(async () => _vatBusPostingGroups = await Api.GetVatBusPostingGroupsAsync()),
+                LoadAsync(async () => _customerPostingGroups = await Api.GetCustomerPostingGroupsAsync())
             };
             await Task.WhenAll(tasks);
         }

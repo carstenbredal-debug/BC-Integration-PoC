@@ -94,6 +94,21 @@ public class PullFromBcFunction
         return response;
     }
 
+    [Function("GetCustomerPostingGroups")]
+    public async Task<HttpResponseData> GetCustomerPostingGroups(
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+    {
+        _logger.LogInformation("Fetching Customer Posting Groups from Business Central");
+
+        var companyName = await _bcClient.ResolveCompanyNameAsync();
+        var groups = await _bcClient.GetCustomerPostingGroupsAsync(companyName);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "application/json");
+        await response.WriteStringAsync(JsonSerializer.Serialize(groups));
+        return response;
+    }
+
     [Function("GetCustomers")]
     public async Task<HttpResponseData> GetCustomers(
         [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)

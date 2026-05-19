@@ -109,10 +109,23 @@ public class BusinessCentralApiClient
             .ToList();
     }
 
-    public async Task PatchCustomerPostingGroupsAsync(
-        string companyName, Guid customerId, string? genBusPostingGroup, string? vatBusPostingGroup)
+    public async Task<List<BcPostingGroup>> GetCustomerPostingGroupsAsync(string companyName)
     {
-        if (string.IsNullOrWhiteSpace(genBusPostingGroup) && string.IsNullOrWhiteSpace(vatBusPostingGroup))
+        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$select=customerPostingGroup&$top=500";
+        var customers = await GetListAsync<BcWorkflowCustomer>(url);
+        return customers
+            .Select(c => c.CustomerPostingGroup)
+            .Where(g => !string.IsNullOrWhiteSpace(g))
+            .Distinct()
+            .OrderBy(g => g)
+            .Select(g => new BcPostingGroup { Code = g })
+            .ToList();
+    }
+
+    public async Task PatchCustomerPostingGroupsAsync(
+        string companyName, Guid customerId, string? genBusPostingGroup, string? vatBusPostingGroup, string? customerPostingGroup = null)
+    {
+        if (string.IsNullOrWhiteSpace(genBusPostingGroup) && string.IsNullOrWhiteSpace(vatBusPostingGroup) && string.IsNullOrWhiteSpace(customerPostingGroup))
             return;
 
         var filterUrl = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$filter=id eq {customerId}&$select=id";
@@ -131,6 +144,8 @@ public class BusinessCentralApiClient
             patchBody["genBusPostingGroup"] = genBusPostingGroup;
         if (!string.IsNullOrWhiteSpace(vatBusPostingGroup))
             patchBody["vatBusPostingGroup"] = vatBusPostingGroup;
+        if (!string.IsNullOrWhiteSpace(customerPostingGroup))
+            patchBody["customerPostingGroup"] = customerPostingGroup;
 
         await PatchRawAsync(patchUrl, patchBody, wfCustomer.ETag);
     }
