@@ -34,6 +34,21 @@ public class PullFromBcFunction
         return response;
     }
 
+    [Function("GetCountriesRegions")]
+    public async Task<HttpResponseData> GetCountriesRegions(
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+    {
+        _logger.LogInformation("Fetching countries/regions from Business Central");
+
+        var companyId = await _bcClient.ResolveCompanyIdAsync();
+        var countriesRegions = await _bcClient.GetCountriesRegionsAsync(companyId);
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "application/json");
+        await response.WriteStringAsync(JsonSerializer.Serialize(countriesRegions));
+        return response;
+    }
+
     [Function("GetCustomers")]
     public async Task<HttpResponseData> GetCustomers(
         [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)

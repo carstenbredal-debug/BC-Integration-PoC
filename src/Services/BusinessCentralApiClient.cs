@@ -56,6 +56,14 @@ public class BusinessCentralApiClient
         return company.Id;
     }
 
+    // ── Countries/Regions ───────────────────────────────────────
+
+    public async Task<List<BcCountryRegion>> GetCountriesRegionsAsync(Guid companyId)
+    {
+        var url = $"{_options.BaseUrl}/companies({companyId})/countriesRegions?$top=250&$orderby=displayName";
+        return await GetListAsync<BcCountryRegion>(url);
+    }
+
     // ── Customers ──────────────────────────────────────────────
 
     public async Task<List<BcCustomer>> GetCustomersAsync(Guid companyId, int top = 100)

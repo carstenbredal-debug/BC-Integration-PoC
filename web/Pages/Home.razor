@@ -30,6 +30,46 @@
                 <ValidationMessage For="@(() => _model.PhoneNumber)" />
             </div>
 
+            <hr />
+            <h5>Address</h5>
+
+            <div class="mb-3">
+                <label class="form-label" for="address">Street Address</label>
+                <InputText id="address" class="form-control" @bind-Value="_model.AddressLine1" />
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="postalCode">Postal Code</label>
+                    <InputText id="postalCode" class="form-control" @bind-Value="_model.PostalCode" />
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label" for="city">City</label>
+                    <InputText id="city" class="form-control" @bind-Value="_model.City" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="country">Country/Region</label>
+                @if (_loadingCountries)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Loading countries...</span>
+                    </div>
+                }
+                else
+                {
+                    <InputSelect id="country" class="form-select" @bind-Value="_model.Country">
+                        <option value="">-- Select country --</option>
+                        @foreach (var c in _countries)
+                        {
+                            <option value="@c.Code">@c.DisplayName (@c.Code)</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+
             <button type="submit" class="btn btn-primary" disabled="@_submitting">
                 @if (_submitting)
                 {
@@ -79,6 +119,24 @@
     private SyncResult? _result;
     private string? _errorMessage;
     private bool _submitting;
+    private bool _loadingCountries = true;
+    private List<CountryRegion> _countries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _countries = await Api.GetCountriesRegionsAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to load countries: {ex.Message}";
+        }
+        finally
+        {
+            _loadingCountries = false;
+        }
+    }
 
     private async Task HandleSubmit()
     {

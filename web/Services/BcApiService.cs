@@ -12,6 +12,12 @@ public class BcApiService
         _httpClient = httpClient;
     }
 
+    public async Task<List<CountryRegion>> GetCountriesRegionsAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<CountryRegion>>("GetCountriesRegions");
+        return result ?? new List<CountryRegion>();
+    }
+
     public async Task<SyncResult> CreateCustomerAsync(CreateCustomerRequest request)
     {
         var payload = new List<BcCustomerDto>
@@ -20,7 +26,11 @@ public class BcApiService
             {
                 DisplayName = request.DisplayName,
                 Email = request.Email,
-                PhoneNumber = request.PhoneNumber
+                PhoneNumber = request.PhoneNumber,
+                AddressLine1 = request.AddressLine1,
+                City = request.City,
+                PostalCode = request.PostalCode,
+                Country = request.Country
             }
         };
 
