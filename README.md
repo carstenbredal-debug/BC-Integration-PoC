@@ -62,12 +62,12 @@ Set the following environment variables (or add them to `local.settings.json`):
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsStorage": "none",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "BC_TENANT_ID": "<your-tenant-id>",
     "BC_CLIENT_ID": "<your-client-id>",
     "BC_CLIENT_SECRET": "<your-client-secret>",
-    "BC_ENVIRONMENT": "sandbox",
+    "BC_ENVIRONMENT": "production",
     "BC_COMPANY_ID": ""
   }
 }
