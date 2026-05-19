@@ -46,6 +46,9 @@ public class BcCustomer
     [JsonPropertyName("taxLiable")]
     public bool TaxLiable { get; set; }
 
+    [JsonPropertyName("paymentTermsId")]
+    public Guid PaymentTermsId { get; set; }
+
     [JsonPropertyName("currencyCode")]
     public string CurrencyCode { get; set; } = string.Empty;
 
@@ -54,4 +57,12 @@ public class BcCustomer
 
     [JsonPropertyName("@odata.etag")]
     public string? ETag { get; set; }
+
+    // Posting group fields — not part of v2.0 API, set via OData v4 after creation.
+    // Nullable so WhenWritingNull skips them when serializing to the v2.0 API.
+    [JsonPropertyName("genBusPostingGroup")]
+    public string? GenBusPostingGroup { get; set; }
+
+    [JsonPropertyName("vatBusPostingGroup")]
+    public string? VatBusPostingGroup { get; set; }
 }

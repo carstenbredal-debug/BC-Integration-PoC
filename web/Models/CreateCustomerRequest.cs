@@ -24,10 +24,28 @@ public class CreateCustomerRequest
     public string PostalCode { get; set; } = string.Empty;
 
     public string Country { get; set; } = string.Empty;
+
+    public string PaymentTermsId { get; set; } = string.Empty;
+
+    public string GenBusPostingGroup { get; set; } = string.Empty;
+
+    public string VatBusPostingGroup { get; set; } = string.Empty;
 }
 
 public class CountryRegion
 {
     public string Code { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
+}
+
+public class PaymentTerm
+{
+    public string Id { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+}
+
+public class PostingGroup
+{
+    public string Code { get; set; } = string.Empty;
 }

@@ -45,4 +45,13 @@ public class BcCustomerDto
 
     [JsonPropertyName("country")]
     public string Country { get; set; } = string.Empty;
+
+    [JsonPropertyName("paymentTermsId")]
+    public string PaymentTermsId { get; set; } = string.Empty;
+
+    [JsonPropertyName("genBusPostingGroup")]
+    public string GenBusPostingGroup { get; set; } = string.Empty;
+
+    [JsonPropertyName("vatBusPostingGroup")]
+    public string VatBusPostingGroup { get; set; } = string.Empty;
 }

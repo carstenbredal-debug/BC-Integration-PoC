@@ -51,11 +51,11 @@
 
             <div class="mb-3">
                 <label class="form-label" for="country">Country/Region</label>
-                @if (_loadingCountries)
+                @if (_loadingDropdowns)
                 {
                     <div class="d-flex align-items-center">
                         <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                        <span>Loading countries...</span>
+                        <span>Loading...</span>
                     </div>
                 }
                 else
@@ -68,6 +68,73 @@
                         }
                     </InputSelect>
                 }
+            </div>
+
+            <hr />
+            <h5>Posting Setup</h5>
+
+            <div class="mb-3">
+                <label class="form-label" for="paymentTerms">Payment Terms</label>
+                @if (_loadingDropdowns)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span>Loading...</span>
+                    </div>
+                }
+                else
+                {
+                    <InputSelect id="paymentTerms" class="form-select" @bind-Value="_model.PaymentTermsId">
+                        <option value="">-- Select payment terms --</option>
+                        @foreach (var pt in _paymentTerms)
+                        {
+                            <option value="@pt.Id">@pt.DisplayName (@pt.Code)</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label" for="genBusPostingGroup">Gen. Bus. Posting Group</label>
+                    @if (_loadingDropdowns)
+                    {
+                        <div class="d-flex align-items-center">
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Loading...</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <InputSelect id="genBusPostingGroup" class="form-select" @bind-Value="_model.GenBusPostingGroup">
+                            <option value="">-- Select --</option>
+                            @foreach (var g in _genBusPostingGroups)
+                            {
+                                <option value="@g.Code">@g.Code</option>
+                            }
+                        </InputSelect>
+                    }
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="vatBusPostingGroup">VAT Bus. Posting Group</label>
+                    @if (_loadingDropdowns)
+                    {
+                        <div class="d-flex align-items-center">
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Loading...</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <InputSelect id="vatBusPostingGroup" class="form-select" @bind-Value="_model.VatBusPostingGroup">
+                            <option value="">-- Select --</option>
+                            @foreach (var g in _vatBusPostingGroups)
+                            {
+                                <option value="@g.Code">@g.Code</option>
+                            }
+                        </InputSelect>
+                    }
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary" disabled="@_submitting">
@@ -119,23 +186,38 @@
     private SyncResult? _result;
     private string? _errorMessage;
     private bool _submitting;
-    private bool _loadingCountries = true;
+    private bool _loadingDropdowns = true;
     private List<CountryRegion> _countries = new();
+    private List<PaymentTerm> _paymentTerms = new();
+    private List<PostingGroup> _genBusPostingGroups = new();
+    private List<PostingGroup> _vatBusPostingGroups = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _countries = await Api.GetCountriesRegionsAsync();
+            var tasks = new[]
+            {
+                LoadAsync(async () => _countries = await Api.GetCountriesRegionsAsync()),
+                LoadAsync(async () => _paymentTerms = await Api.GetPaymentTermsAsync()),
+                LoadAsync(async () => _genBusPostingGroups = await Api.GetGenBusPostingGroupsAsync()),
+                LoadAsync(async () => _vatBusPostingGroups = await Api.GetVatBusPostingGroupsAsync())
+            };
+            await Task.WhenAll(tasks);
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Failed to load countries: {ex.Message}";
+            _errorMessage = $"Failed to load dropdown data: {ex.Message}";
         }
         finally
         {
-            _loadingCountries = false;
+            _loadingDropdowns = false;
         }
+    }
+
+    private static async Task LoadAsync(Func<Task> action)
+    {
+        await action();
     }
 
     private async Task HandleSubmit()
