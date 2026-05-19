@@ -35,10 +35,14 @@ jobs:
         env:
           SCM_CREDS: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
         run: |
-          USERNAME=$(echo "$SCM_CREDS" | grep -oP 'userName="\K[^"]+' | head -1)
-          PASSWORD=$(echo "$SCM_CREDS" | grep -oP 'userPWD="\K[^"]+' | head -1)
-          PUBLISH_URL=$(echo "$SCM_CREDS" | grep -oP 'publishUrl="\K[^"]+' | head -1)
+          # Parse publish profile XML properly using xmllint
+          USERNAME=$(echo "$SCM_CREDS" | xmllint --xpath 'string(//publishProfile[@publishMethod="MSDeploy"]/@userName)' -)
+          PASSWORD=$(echo "$SCM_CREDS" | xmllint --xpath 'string(//publishProfile[@publishMethod="MSDeploy"]/@userPWD)' -)
+          PUBLISH_URL=$(echo "$SCM_CREDS" | xmllint --xpath 'string(//publishProfile[@publishMethod="MSDeploy"]/@publishUrl)' -)
+          # Remove port suffix if present (443 is default for HTTPS)
+          PUBLISH_URL="${PUBLISH_URL%:443}"
           echo "Deploying to: $PUBLISH_URL"
+          echo "Username: $USERNAME"
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://${PUBLISH_URL}/api/zipdeploy" \
             --user "$USERNAME:$PASSWORD" \
@@ -47,6 +51,8 @@ jobs:
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           echo "Deploy response code: $HTTP_CODE"
           if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "Response body:"
+            echo "$RESPONSE" | head -n -1
             echo "Deployment failed with HTTP $HTTP_CODE"
             exit 1
           fi
