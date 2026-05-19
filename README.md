@@ -40,7 +40,10 @@ src/
 
 1. **.NET 8 SDK** — [Install](https://dot.net/download)
 2. **Azure Functions Core Tools v4** — [Install](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
-3. **Azure AD App Registration** with:
+3. **Azurite storage emulator** — required by the Azure Functions runtime
+   - **Visual Studio 2022**: Included automatically. Go to **View → Other Windows → Azurite** and click **Start** before debugging.
+   - **Standalone install**: `npm install -g azurite` then run `azurite --silent --location .azurite`
+4. **Azure AD App Registration** with:
    - API Permission: `Dynamics 365 Business Central` → `API.ReadWrite.All` (Application)
    - Admin consent granted
 
@@ -62,7 +65,7 @@ Set the following environment variables (or add them to `local.settings.json`):
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "none",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "BC_TENANT_ID": "<your-tenant-id>",
     "BC_CLIENT_ID": "<your-client-id>",
@@ -75,7 +78,16 @@ Set the following environment variables (or add them to `local.settings.json`):
 
 ## Build & Run
 
+### Visual Studio
+1. Start Azurite: **View → Other Windows → Azurite → Start Azurite**
+2. Press **F5** to debug
+
+### Command Line
 ```bash
+# Terminal 1: Start Azurite
+azurite --silent --location .azurite
+
+# Terminal 2: Run the Functions
 cd src
 dotnet build
 func start
