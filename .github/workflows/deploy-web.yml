@@ -3,9 +3,9 @@ name: Deploy Blazor Frontend
 on:
   push:
     branches: [main]
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-web.yml"
   workflow_dispatch:
 
 jobs:
