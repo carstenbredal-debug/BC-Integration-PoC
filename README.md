@@ -149,6 +149,33 @@ For Azure deployment, add the frontend URL to your Function App's CORS settings:
 | POST | `/api/PullCustomers` | Pull customers with sync result |
 | POST | `/api/PullItems` | Pull items with sync result |
 
+## Deploy Blazor Frontend to Azure
+
+The Blazor frontend is deployed automatically to **Azure Static Web Apps** via GitHub Actions on every push to `main` that changes the `web/` folder.
+
+### Initial Setup
+
+1. **Create an Azure Static Web App** in the [Azure Portal](https://portal.azure.com/#create/Microsoft.StaticApp):
+   - Plan type: **Free**
+   - Deployment source: **Other** (GitHub Actions workflow is already in the repo)
+2. **Copy the deployment token**: Static Web App → Overview → **Manage deployment token**
+3. **Add it as a GitHub secret**: Repo → Settings → Secrets and variables → Actions → **New repository secret**
+   - Name: `AZURE_STATIC_WEB_APPS_API_TOKEN`
+   - Value: paste the deployment token
+4. **Add CORS** on your Function App: Azure Portal → Function App → API → CORS → add the Static Web App URL
+5. **Trigger a deploy**: Push a change to `web/` or run the workflow manually from the Actions tab
+
+### Function Key
+
+To authenticate API calls from the deployed frontend, update `web/wwwroot/appsettings.json` with your function key before deploying:
+
+```json
+{
+  "ApiBaseUrl": "https://<your-function-app>.azurewebsites.net/api/",
+  "FunctionKey": "<your-function-key>"
+}
+```
+
 ## BC API Reference
 
 Base URL: `https://api.businesscentral.dynamics.com/v2.0/{tenantId}/{environment}/api/v2.0`
