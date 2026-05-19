@@ -69,4 +69,25 @@ public class BcApiService
         var result = await response.Content.ReadFromJsonAsync<SyncResult>();
         return result ?? throw new InvalidOperationException("Empty response from API.");
     }
+
+    public async Task<List<CustomerListItem>> GetCustomersAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<CustomerListItem>>("GetCustomers");
+        return result ?? new List<CustomerListItem>();
+    }
+
+    public async Task<List<ItemListItem>> GetItemsAsync()
+    {
+        var result = await _httpClient.GetFromJsonAsync<List<ItemListItem>>("GetItems");
+        return result ?? new List<ItemListItem>();
+    }
+
+    public async Task<InvoiceResult> CreateSalesInvoiceAsync(CreateInvoiceDto invoice)
+    {
+        var response = await _httpClient.PostAsJsonAsync("CreateSalesInvoice", invoice);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<InvoiceResult>();
+        return result ?? throw new InvalidOperationException("Empty response from API.");
+    }
 }

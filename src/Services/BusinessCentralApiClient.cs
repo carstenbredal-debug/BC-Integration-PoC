@@ -19,7 +19,7 @@ public class BusinessCentralApiClient
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
     public BusinessCentralApiClient(
@@ -181,6 +181,27 @@ public class BusinessCentralApiClient
     {
         var url = $"{_options.BaseUrl}/companies({companyId})/customers({customer.Id})";
         return await PatchAsync<BcCustomer>(url, customer, customer.ETag);
+    }
+
+    // ── Sales Invoices ───────────────────────────────────────────
+
+    public async Task<BcSalesInvoice> CreateSalesInvoiceAsync(Guid companyId, BcSalesInvoice invoice)
+    {
+        var url = $"{_options.BaseUrl}/companies({companyId})/salesInvoices";
+        return await PostAsync<BcSalesInvoice>(url, invoice);
+    }
+
+    public async Task<BcSalesInvoiceLine> AddSalesInvoiceLineAsync(
+        Guid companyId, Guid invoiceId, BcSalesInvoiceLine line)
+    {
+        var url = $"{_options.BaseUrl}/companies({companyId})/salesInvoices({invoiceId})/salesInvoiceLines";
+        return await PostAsync<BcSalesInvoiceLine>(url, line);
+    }
+
+    public async Task<BcSalesInvoice?> GetSalesInvoiceAsync(Guid companyId, Guid invoiceId)
+    {
+        var url = $"{_options.BaseUrl}/companies({companyId})/salesInvoices({invoiceId})";
+        return await GetSingleAsync<BcSalesInvoice>(url);
     }
 
     // ── Items ──────────────────────────────────────────────────
