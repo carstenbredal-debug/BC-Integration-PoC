@@ -43,6 +43,15 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3706A042216947FB890677FF24C942A6 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_501311BFFEA04D30BE4E2BC8A7004BB9 }}
 
+      - name: 'Configure App Settings'
+        run: |
+          az functionapp config appsettings set \
+            --name bc-integration-po \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --settings \
+              BC_ENVIRONMENT=${{ secrets.BC_ENVIRONMENT }} \
+              BC_COMPANY_ID=${{ secrets.BC_COMPANY_ID }}
+
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
