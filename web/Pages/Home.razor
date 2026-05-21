@@ -13,6 +13,30 @@
             <DataAnnotationsValidator />
 
             <div class="mb-3">
+                <label class="form-label" for="customerNumber">Customer Number</label>
+                <div class="input-group">
+                    <InputText id="customerNumber" class="form-control" @bind-Value="_model.Number" />
+                    <button type="button" class="btn btn-outline-secondary" disabled="@(string.IsNullOrWhiteSpace(_model.Number) || _checkingNumber)" @onclick="CheckCustomerNumber">
+                        @if (_checkingNumber)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                        }
+                        else
+                        {
+                            <text>Check</text>
+                        }
+                    </button>
+                </div>
+                @if (_numberCheckResult is not null)
+                {
+                    <div class="form-text @(_numberExists ? "text-danger" : "text-success")">
+                        @_numberCheckResult
+                    </div>
+                }
+                <div class="form-text text-muted">Leave empty for BC to auto-assign a number.</div>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label" for="displayName">Display Name *</label>
                 <InputText id="displayName" class="form-control" @bind-Value="_model.DisplayName" />
                 <ValidationMessage For="@(() => _model.DisplayName)" />
@@ -208,6 +232,9 @@
     private string? _errorMessage;
     private bool _submitting;
     private bool _loadingDropdowns = true;
+    private bool _checkingNumber;
+    private bool _numberExists;
+    private string? _numberCheckResult;
     private List<CountryRegion> _countries = new();
     private List<PaymentTerm> _paymentTerms = new();
     private List<PostingGroup> _genBusPostingGroups = new();
@@ -243,19 +270,56 @@
         await action();
     }
 
+    private async Task CheckCustomerNumber()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Number)) return;
+
+        _checkingNumber = true;
+        _numberCheckResult = null;
+        try
+        {
+            _numberExists = await Api.CheckCustomerNumberExistsAsync(_model.Number);
+            _numberCheckResult = _numberExists
+                ? $"Customer number '{_model.Number}' already exists in BC."
+                : $"Customer number '{_model.Number}' is available.";
+        }
+        catch (Exception ex)
+        {
+            _numberCheckResult = $"Could not check: {ex.Message}";
+            _numberExists = false;
+        }
+        finally
+        {
+            _checkingNumber = false;
+        }
+    }
+
     private async Task HandleSubmit()
     {
         _submitting = true;
         _result = null;
         _errorMessage = null;
+        _numberCheckResult = null;
 
         try
         {
+            if (!string.IsNullOrWhiteSpace(_model.Number))
+            {
+                var exists = await Api.CheckCustomerNumberExistsAsync(_model.Number);
+                if (exists)
+                {
+                    _numberExists = true;
+                    _numberCheckResult = $"Customer number '{_model.Number}' already exists in BC.";
+                    return;
+                }
+            }
+
             _result = await Api.CreateCustomerAsync(_model);
 
             if (_result.Failed == 0)
             {
                 _model = new CreateCustomerRequest();
+                _numberExists = false;
             }
         }
         catch (Exception ex)

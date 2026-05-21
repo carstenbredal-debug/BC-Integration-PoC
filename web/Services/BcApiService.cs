@@ -42,10 +42,17 @@ public class BcApiService
         return result ?? new List<PostingGroup>();
     }
 
+    public async Task<bool> CheckCustomerNumberExistsAsync(string number)
+    {
+        var result = await _httpClient.GetFromJsonAsync<CustomerExistsResult>($"CheckCustomerNumber/{number}");
+        return result?.Exists ?? false;
+    }
+
     public async Task<SyncResult> CreateCustomerAsync(CreateCustomerRequest request)
     {
         var dto = new BcCustomerDto
         {
+            Number = request.Number,
             DisplayName = request.DisplayName,
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
