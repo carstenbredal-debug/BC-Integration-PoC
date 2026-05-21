@@ -81,44 +81,38 @@ public class BusinessCentralApiClient
         return await GetListAsync<BcPaymentTerm>(url);
     }
 
-    // ── Posting Groups (via OData v4 workflowCustomers) ─────────
+    // ── Posting Groups (via OData v4 published web services) ────
 
     public async Task<List<BcPostingGroup>> GetGenBusPostingGroupsAsync(string companyName)
     {
-        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$select=genBusPostingGroup&$top=500";
-        var customers = await GetListAsync<BcWorkflowCustomer>(url);
-        return customers
-            .Select(c => c.GenBusPostingGroup)
-            .Where(g => !string.IsNullOrWhiteSpace(g))
-            .Distinct()
-            .OrderBy(g => g)
-            .Select(g => new BcPostingGroup { Code = g })
+        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/GenBusinessPostingGroups?$select=Code,Description";
+        var groups = await GetListAsync<BcODataPostingGroup>(url);
+        return groups
+            .Where(g => !string.IsNullOrWhiteSpace(g.Code))
+            .OrderBy(g => g.Code)
+            .Select(g => new BcPostingGroup { Code = g.Code, Description = g.Description })
             .ToList();
     }
 
     public async Task<List<BcPostingGroup>> GetVatBusPostingGroupsAsync(string companyName)
     {
-        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$select=vatBusPostingGroup&$top=500";
-        var customers = await GetListAsync<BcWorkflowCustomer>(url);
-        return customers
-            .Select(c => c.VatBusPostingGroup)
-            .Where(g => !string.IsNullOrWhiteSpace(g))
-            .Distinct()
-            .OrderBy(g => g)
-            .Select(g => new BcPostingGroup { Code = g })
+        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/VATBusinessPostingGroups?$select=Code,Description";
+        var groups = await GetListAsync<BcODataPostingGroup>(url);
+        return groups
+            .Where(g => !string.IsNullOrWhiteSpace(g.Code))
+            .OrderBy(g => g.Code)
+            .Select(g => new BcPostingGroup { Code = g.Code, Description = g.Description })
             .ToList();
     }
 
     public async Task<List<BcPostingGroup>> GetCustomerPostingGroupsAsync(string companyName)
     {
-        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/workflowCustomers?$select=customerPostingGroup&$top=500";
-        var customers = await GetListAsync<BcWorkflowCustomer>(url);
-        return customers
-            .Select(c => c.CustomerPostingGroup)
-            .Where(g => !string.IsNullOrWhiteSpace(g))
-            .Distinct()
-            .OrderBy(g => g)
-            .Select(g => new BcPostingGroup { Code = g })
+        var url = $"{_options.ODataV4Url}/Company('{Uri.EscapeDataString(companyName)}')/CustomerPostingGroups?$select=Code";
+        var groups = await GetListAsync<BcODataPostingGroup>(url);
+        return groups
+            .Where(g => !string.IsNullOrWhiteSpace(g.Code))
+            .OrderBy(g => g.Code)
+            .Select(g => new BcPostingGroup { Code = g.Code })
             .ToList();
     }
 
