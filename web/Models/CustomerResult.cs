@@ -23,8 +23,20 @@ public class SyncResult
     public List<string> Errors { get; set; } = new();
 }
 
+public class CustomerExistsResult
+{
+    [JsonPropertyName("exists")]
+    public bool Exists { get; set; }
+
+    [JsonPropertyName("customerName")]
+    public string? CustomerName { get; set; }
+}
+
 public class BcCustomerDto
 {
+    [JsonPropertyName("number")]
+    public string Number { get; set; } = string.Empty;
+
     [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = string.Empty;
 

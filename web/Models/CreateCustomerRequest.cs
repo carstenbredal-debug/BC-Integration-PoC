@@ -4,6 +4,9 @@ namespace web.Models;
 
 public class CreateCustomerRequest
 {
+    [StringLength(20, ErrorMessage = "Customer number must be 20 characters or less.")]
+    public string Number { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Display name is required.")]
     [StringLength(100, ErrorMessage = "Name must be 100 characters or less.")]
     public string DisplayName { get; set; } = string.Empty;

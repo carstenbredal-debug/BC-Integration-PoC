@@ -109,6 +109,24 @@ public class PullFromBcFunction
         return response;
     }
 
+    [Function("CheckCustomerNumber")]
+    public async Task<HttpResponseData> CheckCustomerNumber(
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "CheckCustomerNumber/{number}")] HttpRequestData req,
+        string number)
+    {
+        _logger.LogInformation("Checking if customer number {Number} exists", number);
+
+        var companyId = await _bcClient.ResolveCompanyIdAsync();
+        var customer = await _bcClient.GetCustomerByNumberAsync(companyId, number);
+
+        var result = new { exists = customer is not null, customerName = customer?.DisplayName };
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        response.Headers.Add("Content-Type", "application/json");
+        await response.WriteStringAsync(JsonSerializer.Serialize(result));
+        return response;
+    }
+
     [Function("GetCustomers")]
     public async Task<HttpResponseData> GetCustomers(
         [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
